@@ -3,6 +3,8 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
+const promClient = require('prom-client');
+const path = require('path');
 
 dotenv.config();
 
@@ -22,8 +24,26 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/coupons', require('./routes/couponRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
 
+// Prometheus Monitoring
+const register = new promClient.Registry();
+promClient.collectDefaultMetrics({ register });
+
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
+});
+
+// Serve frontend
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
 app.get('/', (req, res) => {
   res.json({ message: 'BLEND Dessert & Co API is running 🍰' });
+});
+
+app.get('*', (req, res) => {
+  if (!req.path.startsWith('/api') && req.path !== '/metrics') {
+    res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
+  }
 });
 
 // Error Handling

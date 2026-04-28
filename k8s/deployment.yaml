@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blend-app
+  labels:
+    app: blend-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: blend-app
+  template:
+    metadata:
+      labels:
+        app: blend-app
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "5000"
+    spec:
+      containers:
+        - name: blend-app
+          image: prajin06/blend-dessert-co:latest
+          imagePullPolicy: Always
+          env:
+            - name: PORT
+              value: "5000"
+            - name: MONGO_URI
+              value: "mongodb://mongodb-service:27017/blend-dessert-co"
+            - name: JWT_SECRET
+              value: "dev_secret_key_123"
+            - name: JWT_EXPIRE
+              value: "30d"
+          ports:
+            - containerPort: 5000
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
